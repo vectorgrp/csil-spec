@@ -1,0 +1,72 @@
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+
+  build:
+
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Check out sources
+        uses: actions/checkout@v5
+
+      - name: Pull pandoc image
+        run: .github/pages/pandoc.sh --version | head -n 1
+
+      - name: Compile HTML
+        run: |
+          mkdir -p "$RUNNER_TEMP/site/spec"
+          for src in spec/*.md; do
+            dst="spec/$(basename "${src%.md}").html"
+            .github/pages/pandoc.sh \
+              --from gfm+yaml_metadata_block \
+              --to html5 \
+              --standalone \
+              --lua-filter .github/pages/html.lua \
+              --variable maxwidth=50em \
+              --variable 'mainfont=system-ui, sans-serif' \
+              "$src" > "$RUNNER_TEMP/site/$dst"
+            echo "$src -> $RUNNER_TEMP/site/$dst"
+          done
+
+      - name: Build site
+        run: .github/pages/build.sh "$RUNNER_TEMP/site"
+
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: ${{ runner.temp }}/site
+
+  deploy:
+
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+
+      - name: Deploy pages artifact
+        id: deployment
+        uses: actions/deploy-pages@v5
