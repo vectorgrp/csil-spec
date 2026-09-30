@@ -838,8 +838,8 @@ The runtime that a host provides therefore determines the userland, and the host
 
 ### 6.9 Data directory metadata
 
-| Key | Required | Description |
-| --- | -------- | ----------- |
+| Key                  | Required | Description                                |
+| -------------------- | -------- | ------------------------------------------ |
 | `csil.data.<N>.path` | OPTIONAL | A data directory announced to the tooling. |
 
 Indices MUST be contiguous starting from 0 and MUST be ordered numerically.
